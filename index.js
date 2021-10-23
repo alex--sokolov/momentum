@@ -16,7 +16,7 @@ main.append(
   TimeDateGreetings
 );
 
-
+/* Time, date, greetings */
 const time = document.querySelector('time');
 const date = document.querySelector('date');
 const greetings = document.querySelector('span.greeting');
@@ -49,7 +49,6 @@ const inputName = document.querySelector('input.name');
 
 function setLocalStorage() {
   localStorage.setItem('name', inputName.value);
-
 }
 
 window.addEventListener('beforeunload', setLocalStorage)
@@ -62,7 +61,9 @@ function getLocalStorage() {
 
 window.addEventListener('load', getLocalStorage)
 
-/* get random integer from 1 to 20 */
+
+/* Changing bg */
+
 function getRandomNum(max) {
   return Math.floor(Math.random() * max) + 1;
 }
@@ -71,7 +72,6 @@ function setBg(randomNum) {
   const currentDate = new Date();
   const timeOfDay = getTimeOfDay(currentDate.getHours())
   const bgNum = ("" + randomNum).padStart(2, "0");
-  // console.log("Set: " + bgNum);
   const img = new Image();
   img.src = `https://raw.githubusercontent.com/alex--sokolov/stage1-tasks/assets/images/${timeOfDay}/${bgNum}.webp`
   img.onload = () => {
@@ -90,8 +90,54 @@ function getSlideNext() {
   randomNum = randomNum === 20 ? 1 : randomNum + 1;
   setBg(randomNum);
 }
+
 function getSlidePrev() {
   randomNum = randomNum === 1 ? 20 : randomNum - 1;
   setBg(randomNum);
 }
 
+
+/* Weather */
+const weatherIcon = document.querySelector('.weather-icon');
+const temperature = document.querySelector('.temperature');
+const weatherDescription = document.querySelector('.weather-description');
+const wind = document.querySelector('.wind');
+const humidity = document.querySelector('.humidity');
+const weatherError = document.querySelector('.weather-error');
+
+const city = document.querySelector('input.city')
+city.value = 'Minsk';
+
+async function getWeather() {
+  if (localStorage.getItem('city')) {
+    city.value = localStorage.getItem('city');
+  }
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${city.value}&lang=en&appid=8347508b97f54d3010dc41640bfaf498&units=metric`;
+  let res = await fetch(url);
+  if (res.status !== 200) {
+    weatherIcon.className = 'weather-icon owf';
+    temperature.textContent = ``;
+    weatherDescription.textContent = ``;
+    wind.textContent = ``
+    humidity.textContent = ``
+    weatherError.textContent = city.value === '' ? `Error! Nothing to geocode for " !` : `Error! city not found for "${city.value}" !`;
+  } else {
+    weatherError.textContent = ``;
+    const data = await res.json();
+    weatherIcon.className = 'weather-icon owf';
+    weatherIcon.classList.add(`owf-${data.weather[0].id}`);
+    temperature.textContent = `${Math.floor(data.main.temp)}°C`;
+    weatherDescription.textContent = data.weather[0].description;
+    wind.textContent = `Wind speed: ${Math.floor(data.wind.speed)} m/s`
+    humidity.textContent = `Humidity: ${Math.floor(data.main.humidity)} %`
+  }
+}
+
+getWeather()
+
+function setWeather() {
+  localStorage.setItem('city', this.value);
+  getWeather();
+}
+
+city.addEventListener("change", setWeather)
