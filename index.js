@@ -1,100 +1,62 @@
 import './css/owfont-regular.css';
 import './css/styles.scss';
-import Player from './components/Player/player';
-import Weather from './components/Weather/weather';
-import TimeDateGreetings from './components/TimeDateGreetings/timeDateGreetings';
+import player, {toggleBtn} from './components/Player/player';
+import Weather, {getWeather} from './components/Weather/weather';
+import TimeDateGreetings, {
+  showTime,
+  showDate,
+  showGreetings,
+  getTimeOfDay,
+  setLocalStorage, getLocalStorage,
+} from './components/TimeDateGreetings/timeDateGreetings';
+import getRandomNum from "./utils/randomNum";
+import {setBg} from "./components/Background/bg";
+import {getQuotes} from "./components/Quotes/quotes";
+import playlist from "./components/Player/playlist";
 
 
 const body = document.querySelector('body');
 const header = document.getElementById('header');
 const main = document.querySelector('.main');
 header.append(
-  Player,
+  player,
   Weather
 );
 main.append(
   TimeDateGreetings
 );
-
 /* Time, date, greetings */
 const time = document.querySelector('time');
 const date = document.querySelector('date');
 const greetings = document.querySelector('span.greeting');
-
-function showTime() {
-  const currentDate = new Date();
-  time.textContent = currentDate.toLocaleTimeString();
-  showDate(currentDate);
-  showGreetings(currentDate);
-  setTimeout(showTime, 1000);
-}
-
-function showDate(currentDate) {
-  const dateOptions = {weekday: 'long', month: 'long', day: 'numeric', timeZone: 'Europe/Minsk'};
-  date.textContent = currentDate.toLocaleDateString('en-Us', dateOptions);
-}
-
-function showGreetings(currentDate) {
-  greetings.textContent = `Good ${getTimeOfDay(currentDate.getHours())}`;
-}
-
-function getTimeOfDay(hours) {
-  return ['night', 'morning', 'afternoon', 'evening'][Math.trunc(hours / 6)];
-}
-
-showTime();
-
-
 const inputName = document.querySelector('input.name');
+let randomNum = getRandomNum(20);
+showTime(time, date, greetings, body, randomNum);
 
-function setLocalStorage() {
-  localStorage.setItem('name', inputName.value);
-}
-
-window.addEventListener('beforeunload', setLocalStorage)
-
-function getLocalStorage() {
-  if (localStorage.getItem('name')) {
-    inputName.value = localStorage.getItem('name');
-  }
-}
-
-window.addEventListener('load', getLocalStorage)
+window.addEventListener('beforeunload', setLocalStorage.bind(this, inputName))
+window.addEventListener('load', getLocalStorage.bind(this, inputName))
 
 
 /* Changing bg */
 
-function getRandomNum(max) {
-  return Math.floor(Math.random() * max) + 1;
-}
 
-function setBg(randomNum) {
-  const currentDate = new Date();
-  const timeOfDay = getTimeOfDay(currentDate.getHours())
-  const bgNum = ("" + randomNum).padStart(2, "0");
-  const img = new Image();
-  img.src = `https://raw.githubusercontent.com/alex--sokolov/stage1-tasks/assets/images/${timeOfDay}/${bgNum}.webp`
-  img.onload = () => {
-    body.style.backgroundImage = `url('${img.src}')`
-  };
-}
-
-let randomNum = getRandomNum(20);
-setBg(randomNum);
-const slideNext = document.querySelector('.slide-next');
-slideNext.addEventListener('click', getSlideNext);
-const slidePrev = document.querySelector('.slide-prev');
-slidePrev.addEventListener('click', getSlidePrev);
+setBg(body, randomNum);
 
 function getSlideNext() {
   randomNum = randomNum === 20 ? 1 : randomNum + 1;
-  setBg(randomNum);
+  setBg(body, randomNum);
 }
 
 function getSlidePrev() {
   randomNum = randomNum === 1 ? 20 : randomNum - 1;
-  setBg(randomNum);
+  setBg(body, randomNum);
 }
+
+
+const slideNext = document.querySelector('.slide-next');
+slideNext.addEventListener('click', getSlideNext);
+const slidePrev = document.querySelector('.slide-prev');
+slidePrev.addEventListener('click', getSlidePrev);
 
 
 /* Weather */
@@ -104,60 +66,74 @@ const weatherDescription = document.querySelector('.weather-description');
 const wind = document.querySelector('.wind');
 const humidity = document.querySelector('.humidity');
 const weatherError = document.querySelector('.weather-error');
-
 const city = document.querySelector('input.city')
 city.value = 'Minsk';
 
-async function getWeather() {
-  if (localStorage.getItem('city')) {
-    city.value = localStorage.getItem('city');
-  }
-  const url = `https://api.openweathermap.org/data/2.5/weather?q=${city.value}&lang=en&appid=8347508b97f54d3010dc41640bfaf498&units=metric`;
-  let res = await fetch(url);
-  if (res.status !== 200) {
-    weatherIcon.className = 'weather-icon owf';
-    temperature.textContent = ``;
-    weatherDescription.textContent = ``;
-    wind.textContent = ``
-    humidity.textContent = ``
-    weatherError.textContent = city.value === '' ? `Error! Nothing to geocode for " !` : `Error! city not found for "${city.value}" !`;
-  } else {
-    weatherError.textContent = ``;
-    const data = await res.json();
-    weatherIcon.className = 'weather-icon owf';
-    weatherIcon.classList.add(`owf-${data.weather[0].id}`);
-    temperature.textContent = `${Math.floor(data.main.temp)}°C`;
-    weatherDescription.textContent = data.weather[0].description;
-    wind.textContent = `Wind speed: ${Math.floor(data.wind.speed)} m/s`
-    humidity.textContent = `Humidity: ${Math.floor(data.main.humidity)} %`
-  }
+
+getWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city)
+
+function setWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city) {
+  localStorage.setItem('city', city.value);
+  getWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city);
 }
 
-getWeather()
-
-function setWeather() {
-  localStorage.setItem('city', this.value);
-  getWeather();
-}
-
-city.addEventListener('change', setWeather)
+city.addEventListener('change', setWeather.bind(this, weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city))
 
 /* quotes */
 
-
 const quote = document.querySelector('.quote')
 const author = document.querySelector('.author')
-
 const changeQuote = document.querySelector('.change-quote');
-changeQuote.addEventListener('click', getQuotes)
+changeQuote.addEventListener('click', getQuotes.bind(this, quote, author));
 
+getQuotes(quote, author);
 
-async function getQuotes(){
-  const res = await fetch ('./assets/quotes.JSON');
-  const data = await res.json();
-  let randomNum = getRandomNum(20);
-  quote.textContent = data[randomNum-1].quote;
-  author.textContent = data[randomNum-1].author;
+/* player */
+
+const play = document.querySelector('.play');
+const playPrevBtn = document.querySelector('.play-prev');
+const playNextBtn = document.querySelector('.play-next');
+let playNum = 0;
+const playListContainer = document.querySelector('.play-list');
+playlist.forEach(el => {
+  const li = document.createElement('li');
+  li.classList.add('play-item');
+  li.textContent = el.title;
+  playListContainer.append(li)
+})
+const audio = new Audio();
+
+let isPlay = false;
+
+play.addEventListener('click', playAudio)
+play.addEventListener('click', toggleBtn.bind(this, play))
+playPrevBtn.addEventListener('click', playPrev)
+playNextBtn.addEventListener('click', playNext)
+
+function playAudio() {
+  if (!isPlay) {
+    isPlay = true;
+    console.log(playNum);
+    audio.src = playlist[playNum].src;
+    audio.play();
+  } else {
+    isPlay = false;
+    audio.pause();
+  }
 }
 
-getQuotes();
+function playPrev(){
+  playNum = playNum === 0 ? playlist.length - 1 : playNum - 1;
+  isPlay = false;
+  audio.currentTime = 0;
+  playAudio()
+}
+
+function playNext(){
+  playNum = playNum === playlist.length - 1 ? 0 : playNum + 1;
+  isPlay = false;
+  audio.currentTime = 0;
+  playAudio()
+}
+
+
