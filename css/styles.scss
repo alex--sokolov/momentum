@@ -105,10 +105,20 @@ body {
   background-size: 40px 40px;
   background-image: url("../assets/svg/play.svg");
 }
+.advanced-play {
+  width: 40px;
+  height: 40px;
+  background-size: 40px 40px;
+  background-image: url("../assets/svg/play.svg");
+}
 
 .pause {
   background-image: url("../assets/svg/pause.svg");
 }
+
+
+
+
 
 .play-prev {
   background-image: url("../assets/svg/play-prev.svg");
@@ -117,6 +127,124 @@ body {
 .play-next {
   background-image: url("../assets/svg/play-next.svg");
 }
+
+
+.advanced-player{
+  display: none;
+}
+
+
+.advanced-play-prev {
+  background-image: url("../assets/svg/play-prev.svg");
+}
+
+.advanced-play-next {
+  background-image: url("../assets/svg/play-next.svg");
+}
+
+
+
+
+.song-title{
+font-size: 30px;
+height: 60px;
+}
+
+.progress-duration-bar {
+  margin-bottom: 30px;
+  width: 40vw;
+}
+
+.progress-duration {
+  background: linear-gradient(to right, #0498bf 0%,
+    #0498bf 0%, #fff 0%, #fff 100%);
+  border: solid 2px #0498bf;
+  border-radius: 8px;
+  height: 8px;
+  width: 100%;
+  outline: none;
+  transition: background 450ms ease-in;
+  -webkit-appearance: none;
+  cursor:pointer}
+
+.progress-duration::-webkit-slider-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  -webkit-appearance: none;
+  cursor: ew-resize;
+  background: #fff;
+}
+
+.advanced-player-info-controls{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+
+}
+.advanced-player-duration{
+  width: 25%;
+  text-align: left;
+}
+.advanced-player-controls{
+  width: 50%;
+}
+
+
+
+.progress-volume-bar{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 25%;
+
+}
+
+.volume {
+  width: 24px;
+  height: 20px;
+  background-color: #fff;
+  background-size: cover;
+  mask-image: url("../assets/svg/volume.svg");
+  mask-size: contain;
+  -webkit-mask-image: url("../assets/svg/volume.svg");
+  -webkit-mask-size: contain;
+  cursor: pointer;
+}
+
+.mute{
+  mask-image: url("../assets/svg/mute.svg");
+  -webkit-mask-image: url("../assets/svg/mute.svg");
+}
+
+
+.progress-volume {
+  background: linear-gradient(to right, #0498bf 0%,
+    #0498bf 50%, #fff 50%, #fff 100%);
+  border: solid 2px #0498bf;
+  border-radius: 8px;
+  height: 8px;
+  width: 70%;
+  outline: none;
+  transition: background 450ms ease-in;
+  -webkit-appearance: none;
+  padding-right: 0px;
+  cursor:pointer}
+
+.progress-volume::-webkit-slider-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  -webkit-appearance: none;
+  cursor: ew-resize;
+  background: #fff;
+}
+
+
+
+
 
 .weather {
   display: flex;
