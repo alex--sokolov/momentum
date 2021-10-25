@@ -1,7 +1,6 @@
 import htmlToElement from "../../utils/htmlToElement.js";
-import TimeDateGreetings from './timeDateGreetings.html';
+import Greetings from './Greetings.html';
 import {setBg} from "../Background/bg";
-
 
 export function showTime(time, date, greetings, body, randomNum) {
   const currentDate = new Date();
@@ -30,14 +29,14 @@ export function getTimeOfDay(hours) {
   return ['night', 'morning', 'afternoon', 'evening'][Math.trunc(hours / 6)];
 }
 
-export function setLocalStorage(inputName) {
-  localStorage.setItem('name', inputName.value);
+export function setLocalStorage(key, data) {
+  localStorage.setItem(key, data.value);
 }
 
-export function getLocalStorage(inputName) {
-  if (localStorage.getItem('name')) {
-    inputName.value = localStorage.getItem('name');
+export function getLocalStorage(key, data) {
+  if (localStorage.getItem(key)) {
+    data.value = localStorage.getItem(key);
   }
 }
 
-export default htmlToElement(TimeDateGreetings);
+export default htmlToElement(Greetings);

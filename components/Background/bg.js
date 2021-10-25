@@ -1,4 +1,4 @@
-import {getTimeOfDay} from "../TimeDateGreetings/timeDateGreetings";
+import {getTimeOfDay} from "../Greetings/Greetings";
 
 export function setBg(body, randomNum) {
   const currentDate = new Date();

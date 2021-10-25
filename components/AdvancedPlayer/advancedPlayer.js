@@ -1,7 +1,7 @@
 import htmlToElement from "../../utils/htmlToElement.js";
 import AdvancedPlayer from './advancedPlayer.html'
 const advancedPlayer = htmlToElement(AdvancedPlayer);
-
+export default advancedPlayer;
 export function getTimeCodeFromNum(num) {
   let seconds = parseInt(num);
   let minutes = parseInt(seconds / 60);
@@ -14,6 +14,3 @@ export function getTimeCodeFromNum(num) {
     seconds % 60
   ).padStart(2, 0)}`;
 }
-
-
-export default advancedPlayer
