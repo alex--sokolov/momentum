@@ -1,6 +1,6 @@
 import './css/owfont-regular.css';
 import './css/styles.scss';
-import player, {toggleBtn} from './components/Player/player';
+import player, {toggleBtn, toggleBtnItem} from './components/Player/player';
 import advancedPlayer from "./components/AdvancedPlayer/advancedPlayer";
 import weatherFunc, {getWeather} from './components/Weather/weather';
 import greetingsFunc, {
@@ -17,17 +17,29 @@ import settings from "./components/Settings/settings";
 import timeFunc from "./components/Time/time";
 import dateFunc from "./components/Date/date";
 
-
 const body = document.querySelector('body');
 const header = document.getElementById('header');
 const footer = document.querySelector('footer');
 const main = document.querySelector('.main');
 
+let state = JSON.parse(localStorage.getItem('state'));
+if (!state) state = {
+  language: 'en',
+  photoSource: 'Github',
+  tags: 'nature',
+  time: 'off',
+  date: 'off',
+  greetings: 'off',
+  quotes: 'off',
+  weather: 'off',
+  audio: 'off'
+}
 
-let state = JSON.parse (localStorage.getItem('state'));
+
 
 let language = state.language || 'en';
 let photoSource = state.photoSource || 'Github';
+let tags = state.tags || 'nature';
 let isTime = state.time || 'off';
 let isDate = state.date || 'off';
 let isGreetings = state.greetings || 'off';
@@ -46,13 +58,14 @@ footer.append(settings);
 /* Time, date, greetings */
 
 
-
 const time = document.querySelector('time');
 const date = document.querySelector('date');
 const greetings = document.querySelector('span.greeting');
 const inputName = document.querySelector('input.name');
+inputName.placeholder = language === 'ru' ? '[Введите имя]' : '[Enter name]';
 let randomNum = getRandomNum(20);
-showTime(time, date, greetings, body, randomNum);
+let isTiming = false;
+showTime(time, date, greetings, body, randomNum, language, isTiming);
 
 window.addEventListener('beforeunload', setLocalStorage.bind(this, 'name', inputName))
 window.addEventListener('load', getLocalStorage.bind(this, 'name', inputName))
@@ -66,18 +79,20 @@ if (isGreetings === 'on') {
 }
 
 /* Changing bg */
-
-
-setBg(body, randomNum);
+setBg(body, randomNum, tags, photoSource);
 
 function getSlideNext() {
+  state = JSON.parse(localStorage.getItem('state'));
+  photoSource = state.photoSource || 'Github';
   randomNum = randomNum === 20 ? 1 : randomNum + 1;
-  setBg(body, randomNum);
+  setBg(body, randomNum, tags, photoSource);
 }
 
 function getSlidePrev() {
+  state = JSON.parse(localStorage.getItem('state'));
+  photoSource = state.photoSource || 'Github';
   randomNum = randomNum === 1 ? 20 : randomNum - 1;
-  setBg(body, randomNum);
+  setBg(body, randomNum, tags, photoSource);
 }
 
 
@@ -95,14 +110,15 @@ const weatherDescription = weatherElement.querySelector('.weather-description');
 const wind = weatherElement.querySelector('.wind');
 const humidity = weatherElement.querySelector('.humidity');
 const weatherError = weatherElement.querySelector('.weather-error');
-const city = weatherElement.querySelector('input.city')
-city.value = 'Minsk';
+let city = weatherElement.querySelector('input.city');
+city.placeholder = language === 'ru' ? '[Введите город]' : '[Enter city]';
+city.value = language === 'ru' ? 'Минск' : 'Minsk';
 
-getWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city)
+getWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city, language)
 
 function setWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city) {
   localStorage.setItem('city', city.value);
-  getWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city);
+  getWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city, language);
 }
 
 city.addEventListener('change', setWeather.bind(this, weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city))
@@ -115,9 +131,9 @@ const quotesElement = document.querySelector('.section-quotes')
 const quote = document.querySelector('.quote')
 const author = document.querySelector('.author')
 const changeQuote = document.querySelector('.change-quote');
-changeQuote.addEventListener('click', getQuotes.bind(this, quote, author));
+changeQuote.addEventListener('click', getQuotes.bind(this, quote, author, language));
 
-getQuotes(quote, author);
+getQuotes(quote, author, language);
 
 
 if (isQuotes === 'on') quotesElement.style.opacity = '0';
@@ -146,7 +162,15 @@ playlist.forEach(el => {
 
 const playList = document.querySelectorAll('.play-item');
 document.querySelectorAll('.play-item').forEach((el, index) =>
-  el.addEventListener('click', () => playNext(index))
+  el.addEventListener('click', () => {
+    if (el.classList.contains('item-active') || el.classList.contains('item-pause'))
+    {
+      playAudio();
+      toggleBtn(play, advancedPlay)
+    }
+      else
+    playNext(index)
+  })
 )
 
 const audio = new Audio();
@@ -157,7 +181,6 @@ let isProgressVolumeListened = false;
 let k = playNum;
 let isVolumeHasListenerOnclick = false;
 let timerId = false;
-
 
 play.addEventListener('click', playAudio);
 play.addEventListener('click', toggleBtn.bind(this, play, advancedPlay));
@@ -177,7 +200,6 @@ function playAudio() {
   const volume = advancedPlayer.querySelector('.volume');
   const progressDuration = document.querySelector('.progress-duration');
   const progressVolume = document.querySelector('.progress-volume');
-
   progressDuration.style.backgroundColor = '#fff';
 
   songTitle.style.opacity = 1;
@@ -193,10 +215,16 @@ function playAudio() {
       audio.src = playlist[playNum].src;
       k = playNum;
     }
-
+    if (document.querySelector('.item-pause')){
+    const itemActive = document.querySelector('.item-pause');
+    toggleBtnItem(itemActive);
+    }
+    else playList[playNum].classList.add('item-active');
     isPlay = true;
-    playList[playNum].classList.add('item-active');
+
     songTitle.textContent = playlist[playNum].title;
+
+
     audio.play();
 
     if (timerId) {
@@ -262,6 +290,9 @@ function playAudio() {
       durationTotal.textContent = audio.duration > 0 ? getTimeCodeFromNum(audio.duration) : '00:00'
     }, 500)
   } else {
+    const itemActive = document.querySelector('.item-active');
+    console.log(itemActive);
+    toggleBtnItem(itemActive);
     isPlay = false;
     audio.pause();
   }
@@ -272,7 +303,7 @@ function playAudio() {
 function playPrev(indexNum) {
   if (!isPlay) toggleBtn(play, advancedPlay);
   playList[playNum].classList.remove('item-active');
-  playList[playNum].classList.remove('item-active');
+  playList[playNum].classList.remove('item-pause');
   if (indexNum >= 0) playNum = indexNum;
   else playNum = playNum === 0 ? playlist.length - 1 : playNum - 1;
   isPlay = false;
@@ -287,6 +318,7 @@ function playNext(indexNum) {
 
   if (!isPlay) toggleBtn(play, advancedPlay);
   playList[playNum].classList.remove('item-active');
+  playList[playNum].classList.remove('item-pause');
   if (indexNum >= 0) playNum = indexNum;
   else playNum = playNum === playlist.length - 1 ? 0 : playNum + 1;
   isPlay = false;
@@ -300,6 +332,11 @@ function playNext(indexNum) {
 audio.addEventListener("ended", playNext);
 
 if (isAudio === 'on') playerElement.style.opacity = '0';
+
+
+
+
+
 
 /* Settings */
 const Settings = document.querySelector('.settings');
@@ -318,8 +355,7 @@ function openCloseSettings() {
     }, 500);
     const saveBtn = document.querySelector('.settings-save');
     saveBtn.addEventListener('click', saveSettings)
-  }
-  else {
+  } else {
     Settings.classList.remove('active');
     setTimeout(() => {
       Settings.classList.remove('show');
@@ -329,10 +365,28 @@ function openCloseSettings() {
 }
 
 
-function changeForm(){
-  state = JSON.parse (localStorage.getItem('state'));
+function changeForm() {
+  state = JSON.parse(localStorage.getItem('state'));
+  if (!state) {
+    state = {
+      language: 'en',
+      photoSource: 'Github',
+      tags: '',
+      time: 'off',
+      date: 'off',
+      greetings: 'off',
+      quotes: 'off',
+      weather: 'off',
+      audio: 'off'
+    }
+    localStorage.setItem('state', JSON.stringify(state));
+  }
+  state = JSON.parse(localStorage.getItem('state'));
+
+
   language = state.language || 'en';
   photoSource = state.photoSource || 'Github';
+  tags = state.tags;
   isTime = state.time || 'off';
   isDate = state.date || 'off';
   isGreetings = state.greetings || 'off';
@@ -344,6 +398,8 @@ function changeForm(){
   const photoEl1 = document.querySelector('#radio-1')
   const photoEl2 = document.querySelector('#radio-2')
   const photoEl3 = document.querySelector('#radio-3')
+  const tagsEl = document.querySelector('#tags')
+  const tagsDisplay = document.querySelector('#settingTags')
   const timeEl = document.querySelector('#settime')
   const dateEl = document.querySelector('#setdate')
   const greetingsEl = document.querySelector('#setgreetings')
@@ -352,11 +408,25 @@ function changeForm(){
   const audioEl = document.querySelector('#setaudio')
 
   if (language === 'ru') langEl.checked = true;
-  switch (photoSource){
-    case 'Github': photoEl1.checked = true; break;
-    case 'Unsplash API': photoEl2.checked = true; break;
-    default : photoEl3.checked = true;
+  switch (photoSource) {
+    case 'Github':
+      photoEl1.checked = true;
+      if (tagsDisplay.classList.contains('active'))
+        tagsDisplay.classList.remove('active');
+      break;
+    case 'Unsplash API':
+      photoEl2.checked = true;
+      if (!tagsDisplay.classList.contains('active')){
+        tagsDisplay.classList.add('active');
+      }
+      break;
+    default :
+      photoEl3.checked = true;
+      if (!tagsDisplay.classList.contains('active'))
+        tagsDisplay.classList.add('active');
   }
+  tagsEl.value = tags;
+
   if (isTime === 'on') timeEl.checked = true;
   if (isDate === 'on') dateEl.checked = true;
   if (isGreetings === 'on') greetingsEl.checked = true;
@@ -364,78 +434,177 @@ function changeForm(){
   if (isWeather === 'on') weatherEl.checked = true;
   if (isAudio === 'on') audioEl.checked = true;
 
+  changeSettingsLang(language);
+
+  langEl.addEventListener('click', () => {
+    if (langEl.checked === true)
+      changeSettingsLang('ru');
+    else
+      changeSettingsLang('en');
+  });
+
+  photoEl1.addEventListener('click', () =>{
+    if (tagsDisplay.classList.contains('active'))
+      tagsDisplay.classList.remove('active');
+  })
+  photoEl2.addEventListener('click', () =>{
+    if (!tagsDisplay.classList.contains('active')){
+      tagsDisplay.classList.add('active');
+    }
+  })
+  photoEl3.addEventListener('click', () =>{
+    if (!tagsDisplay.classList.contains('active'))
+      tagsDisplay.classList.add('active');
+  })
 
 
+  function changeSettingsLang(language) {
+    const elTitlePhoto = document.querySelector('.title-photo')
+    const elTitleTime = document.querySelector('.title-time')
+    const elTitleDate = document.querySelector('.title-date')
+    const elTitleGreetings = document.querySelector('.title-greetings')
+    const elTitleQuotes = document.querySelector('.title-quotes')
+    const elTitleWeather = document.querySelector('.title-weather')
+    const elTitleAudio = document.querySelector('.title-audio')
+    const elTitleSave = document.querySelector('.title-save')
 
-
-
-
-
-
-
-
-
-
+    if (language === 'ru') {
+      elTitlePhoto.textContent = 'Источник фото:';
+      elTitleTime.textContent = 'Время:';
+      elTitleDate.textContent = 'Дата:';
+      elTitleGreetings.textContent = 'Приветствие:';
+      elTitleQuotes.textContent = 'Цитаты:';
+      elTitleWeather.textContent = 'Погода:';
+      elTitleAudio.textContent = 'Аудио-плеер:';
+      elTitleSave.textContent = 'Сохранить';
+    } else if (language === 'en') {
+      elTitlePhoto.textContent = 'Photo source:';
+      elTitleTime.textContent = 'Time:';
+      elTitleDate.textContent = 'Date:';
+      elTitleGreetings.textContent = 'Greetings:';
+      elTitleQuotes.textContent = 'Quotes:';
+      elTitleWeather.textContent = 'Weather:';
+      elTitleAudio.textContent = 'Audio:';
+      elTitleSave.textContent = 'Save';
+    }
+  }
 }
 
+  function saveSettings() {
+    const advancedPlayerElement = document.querySelector('.advanced-player');
+    const settings = document.querySelector('.settings');
+    let langCh = settings.querySelector('#lang').checked ? 'ru' : 'en';
+    let photoSourceCh = settings.querySelector('input[name="photoSrc"]:checked').id;
+    switch (photoSourceCh) {
+      case 'radio-1':
+        photoSourceCh = 'Github';
+        break;
+      case 'radio-2':
+        photoSourceCh = 'Unsplash API';
+        break;
+      default :
+        photoSourceCh = 'Flickr API';
+    }
+    let tagsCh = settings.querySelector('#tags').value;
+    console.log(tagsCh);
+    let timeCh = settings.querySelector('#settime').checked ? 'on' : 'off';
+    let dateCh = settings.querySelector('#setdate').checked ? 'on' : 'off';
+    let greetingsCh = settings.querySelector('#setgreetings').checked ? 'on' : 'off';
+    let quotesCh = settings.querySelector('#setquotes').checked ? 'on' : 'off';
+    let weatherCh = settings.querySelector('#setweather').checked ? 'on' : 'off';
+    let audioCh = settings.querySelector('#setaudio').checked ? 'on' : 'off';
 
-function saveSettings() {
-  const advancedPlayerElement = document.querySelector('.advanced-player');
-  const settings = document.querySelector('.settings');
-  let langCh = settings.querySelector('#lang').checked ? 'ru' : 'en';
-  let photoSourceCh = settings.querySelector('input[name="photoSrc"]:checked').id;
-  switch (photoSourceCh) {
-    case 'radio-1':  photoSourceCh = 'Github'; break;
-    case 'radio-2':  photoSourceCh = 'Unsplash API'; break;
-    default : photoSourceCh = 'Flickr API';
-  }
-  let timeCh = settings.querySelector('#settime').checked ? 'on' : 'off';
-  let dateCh = settings.querySelector('#setdate').checked ? 'on' : 'off';
-  let greetingsCh = settings.querySelector('#setgreetings').checked ? 'on' : 'off';
-  let quotesCh = settings.querySelector('#setquotes').checked ? 'on' : 'off';
-  let weatherCh = settings.querySelector('#setweather').checked ? 'on' : 'off';
-  let audioCh = settings.querySelector('#setaudio').checked ? 'on' : 'off';
-
-  const state = {
-    language: langCh,
-    photoSource: photoSourceCh,
-    time: timeCh,
-    date: dateCh,
-    greetings : greetingsCh,
-    quotes : quotesCh,
-    weather : weatherCh,
-    audio : audioCh
-  }
-  if (timeCh === 'on') time.style.opacity = '0';
-  else time.style.opacity = '1';
-  if (dateCh === 'on') date.style.opacity = '0';
-  else date.style.opacity = '1';
-  if (greetingsCh === 'on') {
-    greetings.style.opacity = '0';
-    inputName.style.opacity = '0';
-  }
-  else {
-    greetings.style.opacity = '1';
-    inputName.style.opacity = '1';
-  }
-  if (quotesCh === 'on') quotesElement.style.opacity = '0';
-  else quotesElement.style.opacity = '1';
-  if (weatherCh === 'on') weatherElement.style.opacity = '0';
-  else weatherElement.style.opacity = '1';
-  if (audioCh === 'on') {
-    playerElement.style.opacity = '0';
-    advancedPlayerElement.style.opacity = '0';
-  }
-  else {
-    playerElement.style.opacity = '1';
-  }
+    const state = {
+      language: langCh,
+      photoSource: photoSourceCh,
+      tags: tagsCh,
+      time: timeCh,
+      date: dateCh,
+      greetings: greetingsCh,
+      quotes: quotesCh,
+      weather: weatherCh,
+      audio: audioCh
+    }
 
 
+    setBg(body, randomNum, tagsCh, photoSourceCh);
+
+    if (timeCh === 'on') time.style.opacity = '0';
+    else time.style.opacity = '1';
+    if (dateCh === 'on') date.style.opacity = '0';
+    else date.style.opacity = '1';
+    if (greetingsCh === 'on') {
+      greetings.style.opacity = '0';
+      inputName.style.opacity = '0';
+    } else {
+      greetings.style.opacity = '1';
+      inputName.style.opacity = '1';
+    }
+    if (quotesCh === 'on') quotesElement.style.opacity = '0';
+    else quotesElement.style.opacity = '1';
+    if (weatherCh === 'on') weatherElement.style.opacity = '0';
+    else weatherElement.style.opacity = '1';
+    if (audioCh === 'on') {
+      playerElement.style.opacity = '0';
+      advancedPlayerElement.style.opacity = '0';
+    } else {
+      playerElement.style.opacity = '1';
+    }
+
+    if (language !== langCh) {
+      showTime(time, date, greetings, body, randomNum, langCh, true);
+      inputName.placeholder = langCh === 'ru' ? '[Введите имя]' : '[Enter name]';
+      city.placeholder = langCh === 'ru' ? '[Введите город]' : '[Enter city]';
+      if (langCh === 'ru' && city.value === 'Minsk') {
+        city.value = 'Минск'
+        city.setAttribute('value', 'Минск');
+      }
+      if (langCh === 'en' && city.value === 'Минск') {
+        city.value = 'Minsk';
+        city.setAttribute('value', 'Minsk');
+      }
+
+      getWeather(weatherIcon, temperature, weatherDescription, wind, humidity, weatherError, city, langCh);
+      getQuotes(quote, author, langCh);
+      changeQuote.removeEventListener('click', getQuotes.bind(this, quote, author, language));
+      changeQuote.addEventListener('click', getQuotes.bind(this, quote, author, langCh));
 
 
-  localStorage.setItem ('state', JSON.stringify(state));
-  openCloseSettings()
-}
+      const elTitlePhoto = document.querySelector('.title-photo')
+      const elTitleTime = document.querySelector('.title-time')
+      const elTitleDate = document.querySelector('.title-date')
+      const elTitleGreetings = document.querySelector('.title-greetings')
+      const elTitleQuotes = document.querySelector('.title-quotes')
+      const elTitleWeather = document.querySelector('.title-weather')
+      const elTitleAudio = document.querySelector('.title-audio')
+      const elTitleSave = document.querySelector('.title-save')
+
+      if (langCh === 'ru') {
+        elTitlePhoto.textContent = 'Источник фото:'
+        elTitleTime.textContent = 'Время:'
+        elTitleDate.textContent = 'Дата:'
+        elTitleGreetings.textContent = 'Приветствие:'
+        elTitleQuotes.textContent = 'Цитаты:'
+        elTitleWeather.textContent = 'Погода:'
+        elTitleAudio.textContent = 'Аудио-плеер:'
+        elTitleSave.textContent = 'Сохранить'
+      } else if (langCh === 'en') {
+        elTitlePhoto.textContent = 'Photo source:'
+        elTitleTime.textContent = 'Time:'
+        elTitleDate.textContent = 'Date:'
+        elTitleGreetings.textContent = 'Greetings:'
+        elTitleQuotes.textContent = 'Quotes:'
+        elTitleWeather.textContent = 'Weather:'
+        elTitleAudio.textContent = 'Audio:'
+        elTitleSave.textContent = 'Save'
+      }
+
+    }
+
+
+    localStorage.setItem('state', JSON.stringify(state));
+    openCloseSettings()
+  }
 
 
 
